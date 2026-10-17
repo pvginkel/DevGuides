@@ -1,0 +1,7 @@
+# Curated entry points for DevGuides, the hub of https://dev-guides.home/.
+
+projects:
+  root:
+    description: >-
+      The hub of dev-guides.home: the index page, the root llms.txt, and the one Jenkins
+      pipeline that builds and publishes every guide.
