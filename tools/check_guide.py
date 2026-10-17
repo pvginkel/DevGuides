@@ -29,6 +29,9 @@ below cover what that strict build does not, by the guide contract's item:
 - home (7): the nav links home, to https://dev-guides.home/.
 - own-checks (8): the guide's check_site.py, when it has one, passes after the build, run with the
   guide's toolchain as `uv run --locked python check_site.py`.
+- palette (9): theme.palette is the light/dark block the guides share, two entries in this order:
+  scheme default on (prefers-color-scheme: light) with toggle icon lucide/sun, then scheme slate on
+  (prefers-color-scheme: dark) with lucide/moon. primary, accent and the toggle's name are free.
 - config (warning only): a top-level mkdocs.yml key Zensical does not read, and the validation
   settings it ignores. Zensical drops both without a word.
 
@@ -71,7 +74,15 @@ ITEMS = {
     "pages": 6,
     "home": 7,
     "own-checks": 8,
+    "palette": 9,
 }
+
+# The light/dark theme.palette every guide carries, entry by entry and in this order: the media
+# query, the scheme and the header toggle's icon. Nothing else in an entry is checked.
+PALETTE = [
+    {"media": "(prefers-color-scheme: light)", "scheme": "default", "toggle.icon": "lucide/sun"},
+    {"media": "(prefers-color-scheme: dark)", "scheme": "slate", "toggle.icon": "lucide/moon"},
+]
 
 # The top-level mkdocs.yml keys Zensical reads (zensical/config.py, 0.0.71). It ignores any other
 # without a warning, so a misspelt key or a MkDocs-only one would pass unnoticed.
@@ -307,6 +318,55 @@ def check_config(guide: Guide) -> None:
         guide.error(CONFIG, "home", f"the nav does not link home, to {HUB}")
 
 
+def check_palette(guide: Guide) -> None:
+    theme = guide.config.get("theme")
+    palette = theme.get("palette") if isinstance(theme, dict) else None
+    if not isinstance(palette, list) or len(palette) != len(PALETTE):
+        found = (
+            "not set"
+            if palette is None
+            else f"a list of {len(palette)}"
+            if isinstance(palette, list)
+            else f"a {type(palette).__name__}"
+        )
+        want = ", then ".join(
+            f"scheme {w['scheme']} on {w['media']!r} with toggle icon {w['toggle.icon']}"
+            for w in PALETTE
+        )
+        guide.error(
+            CONFIG,
+            "palette",
+            f"theme.palette is {found}; the guides carry the light/dark block of "
+            f"{len(PALETTE)} entries, {want}. Copy it from an existing guide",
+        )
+        return
+    expected = PALETTE
+    medias = [entry.get("media") if isinstance(entry, dict) else None for entry in palette]
+    if medias == [w["media"] for w in reversed(PALETTE)]:
+        guide.error(
+            CONFIG, "palette", "theme.palette lists the dark entry first, not the light one"
+        )
+        # Each entry is still held to its own scheme's settings.
+        expected = PALETTE[::-1]
+    for index, (entry, want) in enumerate(zip(palette, expected, strict=True)):
+        if not isinstance(entry, dict):
+            guide.error(CONFIG, "palette", f"theme.palette[{index}] is {entry!r}, not a mapping")
+            continue
+        toggle = entry.get("toggle")
+        found = {
+            "media": entry.get("media"),
+            "scheme": entry.get("scheme"),
+            "toggle.icon": toggle.get("icon") if isinstance(toggle, dict) else None,
+        }
+        for key, value in want.items():
+            if found[key] != value:
+                guide.error(
+                    CONFIG,
+                    "palette",
+                    f"theme.palette[{index}].{key} is {found[key]!r}, not {value!r}",
+                )
+
+
 def nav_entries(nav: object) -> list[str]:
     """Every target in the nav, pages and URLs, at any depth."""
     if isinstance(nav, str):
@@ -471,6 +531,7 @@ def check_guide(guide: Guide) -> None:
     if not load_config(guide):
         return
     check_config(guide)
+    check_palette(guide)
     list_pages(guide)
     check_nav(guide)
     check_links(guide)
