@@ -1,0 +1,3 @@
+# The hub build's output (tools/build_hub.py), and the bytecode of the checker it imports.
+/out/
+__pycache__/
