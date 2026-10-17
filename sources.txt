@@ -1,0 +1,7 @@
+# The source repos of https://dev-guides.home/, by their GitHub names under pvginkel: every guide
+# in each is built and published (tools/build_hub.py). The hub build expects them side by side in
+# one directory, as the Jenkinsfile's Checkout clones them and as /work holds them in a pod, so a
+# repo added here is cloned there too. Edited only when a source repo is added.
+DevGuides
+DevGuidesPrivate
+JenkinsPipelineUtils
