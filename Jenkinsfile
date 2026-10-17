@@ -51,6 +51,10 @@ pipeline {
                     git url: 'https://github.com/pvginkel/JenkinsPipelineUtils.git', branch: 'main',
                         credentialsId: '5f6fbd66-b41c-405f-b107-85ba6fd97f10'
                 }
+                dir('ModernAppTemplate') {
+                    git url: 'https://github.com/pvginkel/ModernAppTemplate.git', branch: 'main',
+                        credentialsId: '5f6fbd66-b41c-405f-b107-85ba6fd97f10'
+                }
             }
         }
 
