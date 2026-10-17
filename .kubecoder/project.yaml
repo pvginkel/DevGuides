@@ -1,7 +1,24 @@
-# Curated entry points for DevGuides, the hub of https://dev-guides.home/.
+# Curated entry points for DevGuides, the hub of https://dev-guides.home/: the index page, the root
+# llms.txt, the guide checker every source repo's gate runs (tools/check_guide.py), and the one
+# Jenkins job, DevGuides, that builds every guide of every source repo (sources.txt) into the
+# site's image and pins it into DevGuidesDeploy. uv and Python live in the `python` toolchain
+# sidecar, so the verbs that need them carry their `cexec` prefix here and only here.
 
 projects:
   root:
     description: >-
-      The hub of dev-guides.home: the index page, the root llms.txt, and the one Jenkins
-      pipeline that builds and publishes every guide.
+      The hub of dev-guides.home: the index page, the root llms.txt, the guide checker
+      tools/check_guide.py, and the one Jenkins pipeline that builds and publishes every guide.
+    jenkins: DevGuides
+    # The hub as the image builds it, over the source repos' working trees beside this one in
+    # /work: every guide built and checked against the guide contract, then the index page and the
+    # root llms.txt assembled into out/ and their links checked. Green only when every source
+    # repo's guides are.
+    test: cexec python uv run tools/build_hub.py /work
+    # The site image, as the Jenkinsfile builds it. kaniko streams its whole context to the
+    # builder, so the context is a copy of the source repos' working trees without what git ignores,
+    # staged under /work/scratch rather than /work itself. `kaniko` lives in this container rather
+    # than a toolchain sidecar.
+    build:
+      - python3 tools/stage_context.py /work /work/scratch/dev-guides-context
+      - kaniko --context /work/scratch/dev-guides-context --dockerfile DevGuides/Dockerfile --destination registry:5000/dev-guides-home:local --no-push --timeout 600
